@@ -3,6 +3,7 @@ const state = {
   methodMistakes: 0, observationMistakes: 0, bonusMistakes: 0,
   muted: false, timer: null, lang: 'en'
 };
+let labWorld = null, labCanvas = null, labAudioContext = null;
 const views = ['introView', 'playView', 'resultView', 'bonusView', 'endView'];
 const sceneLabels = {
   oxygen: '氧氣', hydrogen: '氫氣', lime: '石灰水',
@@ -27,7 +28,7 @@ function setDynamic(target, zh, en = EN[zh] || zh) {
   element.dataset.en = en;
   element.textContent = state.lang === 'en' ? en : zh;
 }
-function showView(id) { views.forEach(view => $(view).classList.toggle('active', view === id)); }
+function showView(id) { views.forEach(view => $(view).classList.toggle('active', view === id)); if (id === 'playView') requestAnimationFrame(() => labWorld?.resize()); }
 function updateProgress() {
   const completed = state.phase === 'end' ? 6 : state.phase === 'bonus' ? 5 : state.round;
   $('score').textContent = state.score;
@@ -64,7 +65,7 @@ function playTone(kind) {
   if (state.muted) return;
   try {
     const AudioCtx = window.AudioContext || window.webkitAudioContext;
-    const ctx = new AudioCtx(), oscillator = ctx.createOscillator(), gain = ctx.createGain();
+    const ctx = labAudioContext ||= new AudioCtx(); if (ctx.state === 'suspended') ctx.resume(); const oscillator = ctx.createOscillator(), gain = ctx.createGain();
     oscillator.type = kind === 'pop' ? 'square' : 'sine';
     oscillator.frequency.setValueAtTime(kind === 'pop' ? 290 : 520, ctx.currentTime);
     oscillator.frequency.exponentialRampToValueAtTime(kind === 'pop' ? 120 : 820, ctx.currentTime + .18);
@@ -73,7 +74,7 @@ function playTone(kind) {
     gain.gain.exponentialRampToValueAtTime(.0001, ctx.currentTime + .25);
     oscillator.connect(gain).connect(ctx.destination);
     oscillator.start(); oscillator.stop(ctx.currentTime + .26);
-    oscillator.onended = () => ctx.close();
+    oscillator.onended = () => { oscillator.disconnect(); gain.disconnect(); };
   } catch { /* Sound is optional. */ }
 }
 function renderRound() {
@@ -86,16 +87,10 @@ function renderRound() {
   $('roundNumber').textContent = number;
   setDynamic('gasName', round.gas);
   $('gasFormula').textContent = round.formula;
-  const scene = $('scene');
-  scene.innerHTML = scenes[round.scene];
-  scene.dataset.scene = round.scene;
-  scene.classList.remove('play');
-  setDynamic(scene.querySelector('.hint-mark'), sceneLabels[round.scene]);
-  if (round.scene === 'hydrogen') setDynamic(scene.querySelector('.pop-text'), '卜！', 'POP!');
-  scene.querySelector('svg').setAttribute('aria-label', tr('氣體測試模擬實驗'));
+  mountScene();
   setDynamic('sceneCaption', '選好方法後，實驗會在這裏播放。');
   $('replayButton').hidden = true;
-  $('questionStep').textContent = 'STEP 01 / 02';
+  setDynamic('questionStep','步驟 01 / 02','STEP 01 / 02');
   setDynamic('questionTitle', '你會使用哪一種方法？');
   setDynamic('questionHelp', state.round === 3 ? '這次試試二氧化碳的另一種測試方法。' : '選擇適合這個實驗的測試方法。');
   choiceList(round.methods, round.method, 'method');
@@ -122,13 +117,13 @@ function choose(id, correctId, type, button) {
   const firstTry = type === 'method' ? state.methodMistakes === 0 : state.observationMistakes === 0;
   state.score += firstTry ? 2 : 1;
   updateProgress();
-  playTone(type === 'observation' && round.scene === 'hydrogen' ? 'pop' : 'success');
+  playTone('success');
   if (type === 'method') {
     state.phase = 'animating';
     setFeedback('方法正確！請觀察實驗動畫。', true);
     state.timer = setTimeout(() => {
       animateScene();
-      state.timer = setTimeout(showObservations, 2600);
+      state.timer = setTimeout(showObservations, 3200);
     }, 360);
   } else {
     state.phase = 'result';
@@ -140,13 +135,17 @@ function animateScene() {
   scene.classList.remove('play');
   void scene.offsetWidth;
   scene.classList.add('play');
-  scene.querySelector('svg').setAttribute('aria-label', tr(rounds[state.round].caption));
+  scene.querySelector('svg')?.setAttribute('aria-label', tr(rounds[state.round].caption));
+  labCanvas?.setAttribute('aria-label', tr(rounds[state.round].caption));
+  if (labWorld?.available) { $('popCue').hidden = true; labWorld.play(); }
+  else if (rounds[state.round].scene === 'hydrogen') setTimeout(() => playTone('pop'), 1000);
+  if (matchMedia('(max-width:900px)').matches) $('labScreen').scrollIntoView({behavior:matchMedia('(prefers-reduced-motion:reduce)').matches?'instant':'smooth',block:'start'});
   setDynamic('sceneCaption', '觀察中……');
 }
 function showObservations() {
   const round = rounds[state.round];
   state.phase = 'observation';
-  $('questionStep').textContent = 'STEP 02 / 02';
+  setDynamic('questionStep','步驟 02 / 02','STEP 02 / 02');
   setDynamic('questionTitle', '你觀察到甚麼變化？');
   setDynamic('questionHelp', '根據剛才的動畫，選出這個測試的結果。');
   setDynamic('sceneCaption', '動畫已完成。需要的話可以重播。');
@@ -171,7 +170,7 @@ function showResult() {
   const round = rounds[state.round];
   showView('resultView');
   confetti();
-  setDynamic('resultKicker', '配對成功 · EXPERIMENT COMPLETE');
+  setDynamic('resultKicker', '配對成功', 'EXPERIMENT COMPLETE');
   setDynamic('resultTitle', `${round.gas}測試成功！`, `${tr(round.gas, 'en')} test complete!`);
   setDynamic('resultExplanation', round.explanation);
   setDynamic('resultFact', round.fact);
@@ -207,6 +206,13 @@ function applyLanguage(lang) {
     element.textContent = state.lang === 'en' ? element.dataset.en : element.dataset.zh;
   });
   $('languageSelect').value = state.lang;
+  setDynamic('gameKicker','氣體偵探遊戲','THE GAS DETECTIVE GAME');
+  setDynamic('observationTitle',labWorld?.available?'立體實驗室':'觀察視窗',labWorld?.available?'3D EXPERIMENT LAB':'OBSERVATION WINDOW');
+  setDynamic('sceneGesture','拖動旋轉 · 雙指縮放','Drag to rotate · Pinch to zoom');
+  $('reset3D').setAttribute('aria-label',state.lang==='en'?'Reset view':'重設視角');
+  if ($('popCue')) setDynamic('popCue','卜！','POP!');
+  labWorld?.setLanguage(state.lang);
+  labCanvas?.setAttribute('aria-label',tr(rounds[state.round].caption));
   document.querySelector('.brand').setAttribute('aria-label', state.lang === 'en' ? 'Gas Test Lab home' : '氣體測試實驗室首頁');
   $('game').setAttribute('aria-label', state.lang === 'en' ? 'Gas test game' : '氣體測試遊戲');
   $('levelMap').setAttribute('aria-label', state.lang === 'en' ? 'Mission progress' : '任務進度');
@@ -238,7 +244,7 @@ $('homeButton').addEventListener('click', () => {
 });
 $('replayButton').addEventListener('click', () => {
   animateScene();
-  state.timer = setTimeout(() => setDynamic('sceneCaption', '動畫已完成。需要的話可以重播。'), 2600);
+  state.timer = setTimeout(() => setDynamic('sceneCaption', '動畫已完成。需要的話可以重播。'), 3200);
 });
 $('bonusChoices').addEventListener('click', event => {
   const button = event.target.closest('button');
@@ -273,3 +279,31 @@ try {
   if (saved === 'en' || saved === 'zh-Hant') state.lang = saved;
 } catch { /* Offline file may restrict storage. */ }
 applyLanguage(state.lang);
+
+function mountScene() {
+  const round=rounds[state.round],scene=$('scene');
+  scene.dataset.scene=round.scene;scene.classList.remove('play');
+  if(labWorld?.available){
+    const cue=document.createElement('span');cue.id='popCue';cue.className='sound-cue';cue.hidden=true;cue.setAttribute('role','status');setDynamic(cue,'卜！','POP!');
+    scene.replaceChildren(labCanvas,cue);scene.classList.add('is-3d');$('sceneControls').hidden=false;
+    labCanvas.setAttribute('aria-label',tr('氣體測試模擬實驗'));labWorld.show(round.scene);labWorld.resize();
+  } else {
+    scene.classList.remove('is-3d');$('sceneControls').hidden=true;scene.innerHTML=scenes[round.scene];
+    setDynamic(scene.querySelector('.hint-mark'),sceneLabels[round.scene]);
+    if(round.scene==='hydrogen')setDynamic(scene.querySelector('.pop-text'),'卜！','POP!');
+    scene.querySelector('svg').setAttribute('aria-label',tr('氣體測試模擬實驗'));
+  }
+}
+$('reset3D').addEventListener('click',()=>labWorld?.resetCamera());
+(async()=>{
+  try{
+    const {GasTestWorld}=await import('./lab3d.js?v=3d-20261018');
+    labCanvas=document.createElement('canvas');labCanvas.className='lab-canvas';labCanvas.setAttribute('role','img');
+    labWorld=new GasTestWorld(labCanvas,{onPop:()=>{playTone('pop');if($('popCue'))$('popCue').hidden=false;}});
+    if(!labWorld.available)return;
+    labWorld.setLanguage(state.lang);
+    setDynamic('observationTitle','立體實驗室','3D EXPERIMENT LAB');
+    if(['method','animating','observation'].includes(state.phase)){const active=$('scene').classList.contains('play');mountScene();if(active)labWorld.play();}
+  }catch(error){console.warn('3D unavailable. Using illustrated experiments.',error);}
+})();
+window.addEventListener('pagehide',event=>{if(!event.persisted){labWorld?.dispose();labAudioContext?.close();}});

@@ -6,12 +6,13 @@
   <meta name="theme-color" content="#fff1b2">
   <meta name="description" content="Learn gas tests and their observable changes through matching and animated experiments.">
   <title>Gas Test Adventure | Interactive game</title>
-  <link rel="stylesheet" href="styles.css">
-  <link rel="stylesheet" href="theme.css">
-  <link rel="stylesheet" href="fx.css">
-  <script src="i18n.js" defer></script>
-  <script src="script.js" defer></script>
-  <script src="game.js" defer></script>
+  <link rel="stylesheet" href="styles.css?v=3d-20261018">
+  <link rel="stylesheet" href="theme.css?v=3d-20261018">
+  <link rel="stylesheet" href="fx.css?v=3d-20261018">
+  <link rel="stylesheet" href="three-ui.css?v=3d-20261018">
+  <script src="i18n.js?v=3d-20261018" defer></script>
+  <script src="script.js?v=3d-20261018" defer></script>
+  <script src="game.js?v=3d-20261018" defer></script>
 </head>
 <body>
   <div class="page-shell">
@@ -26,7 +27,7 @@
 
     <main>
       <section class="game-card" id="game" aria-label="氣體測試遊戲">
-        <div class="game-topline"><div><span class="section-kicker">THE GAS DETECTIVE GAME</span><h2>偵探任務板</h2></div><div class="score-pill"><span class="score-star" aria-hidden="true">★</span> 得分 <strong id="score">0</strong><span>/ 21</span></div></div>
+        <div class="game-topline"><div><span class="section-kicker" id="gameKicker">氣體偵探遊戲</span><h2>偵探任務板</h2></div><div class="score-pill"><span class="score-star" aria-hidden="true">★</span> 得分 <strong id="score">0</strong><span>/ 21</span></div></div>
         <div class="progress-area"><div class="progress-meta"><span id="stepLabel">準備開始</span><span id="progressCount">0 / 6</span></div><div class="progress-track"><div class="progress-fill" id="progressFill"></div></div><div class="level-map" id="levelMap" aria-label="任務進度"><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>★</span></div></div>
 
         <div id="introView" class="intro-view view active">
@@ -41,16 +42,16 @@
         <div id="playView" class="play-view view" aria-live="polite">
           <div class="round-header"><div><span class="round-badge" id="roundBadge">實驗 01 / 05</span><h3 id="gasName">氧氣</h3><p id="gasFormula" class="formula">O₂</p></div><div class="round-number" id="roundNumber" aria-hidden="true">01</div></div>
           <div class="workbench">
-            <div class="lab-screen" id="labScreen"><div class="lab-screen-top"><span class="live-dot"></span><span>OBSERVATION WINDOW</span><button type="button" id="replayButton" class="replay-button" hidden>↻ 重播</button></div><div class="scene" id="scene"></div><div class="scene-caption" id="sceneCaption">選好方法後，實驗會在這裏播放。</div></div>
+            <div class="lab-screen" id="labScreen"><div class="lab-screen-top"><span class="live-dot"></span><span id="observationTitle">觀察視窗</span><button type="button" id="replayButton" class="replay-button" hidden>↻ 重播</button></div><div class="scene" id="scene"></div><div class="scene-controls" id="sceneControls" hidden><span id="sceneGesture">拖動旋轉 · 雙指縮放</span><button type="button" id="reset3D" aria-label="重設視角">↺</button></div><div class="scene-caption" id="sceneCaption">選好方法後，實驗會在這裏播放。</div></div>
             <div class="question-panel"><div class="question-step" id="questionStep">STEP 01 / 02</div><h4 id="questionTitle">你會使用哪一種方法？</h4><p class="question-help" id="questionHelp">選擇適合測試這種氣體的實驗用品。</p><div class="choices" id="choices"></div><div class="feedback" id="feedback" role="status" aria-live="polite"></div></div>
           </div>
         </div>
 
         <div id="resultView" class="result-view view" aria-live="polite"><div class="confetti-field" id="resultConfetti" aria-hidden="true"></div><div class="result-star" aria-hidden="true">✦</div><div class="result-kicker" id="resultKicker">配對成功</div><h3 id="resultTitle"></h3><p id="resultExplanation"></p><div class="result-fact" id="resultFact"></div><button type="button" class="primary-button" id="nextButton"><span id="nextButtonText">下一個實驗</span> <span aria-hidden="true">→</span></button></div>
 
-        <div id="bonusView" class="bonus-view view" aria-live="polite"><div class="bonus-layout"><div><span class="round-badge">最後挑戰 · THINK LIKE A SCIENTIST</span><h3>木條熄滅，就一定是氮氣嗎？</h3><p>把燃着的木條分別放進氮氣和稀有氣體中，火焰都可能熄滅。單靠這個現象，可以分辨它們嗎？</p><div class="bonus-choices" id="bonusChoices"><button type="button" data-answer="yes">可以，木條熄滅就證明是氮氣</button><button type="button" data-answer="no">不可以，還需要其他證據</button></div><div class="feedback" id="bonusFeedback" role="status"></div></div><div class="bonus-illustration" aria-hidden="true"><div class="mini-jar"><span>N₂</span><div class="mini-flame"></div></div><div class="question-mark">?</div><div class="mini-jar"><span>稀有氣體</span><div class="mini-flame"></div></div></div></div></div>
+        <div id="bonusView" class="bonus-view view" aria-live="polite"><div class="bonus-layout"><div><span class="round-badge">最後挑戰</span><h3>木條熄滅，就一定是氮氣嗎？</h3><p>把燃着的木條分別放進氮氣和稀有氣體中，火焰都可能熄滅。單靠這個現象，可以分辨它們嗎？</p><div class="bonus-choices" id="bonusChoices"><button type="button" data-answer="yes">可以，木條熄滅就證明是氮氣</button><button type="button" data-answer="no">不可以，還需要其他證據</button></div><div class="feedback" id="bonusFeedback" role="status"></div></div><div class="bonus-illustration" aria-hidden="true"><div class="mini-jar"><span>N₂</span><div class="mini-flame"></div></div><div class="question-mark">?</div><div class="mini-jar"><span>稀有氣體</span><div class="mini-flame"></div></div></div></div></div>
 
-        <div id="endView" class="end-view view" aria-live="polite"><div class="trophy" aria-hidden="true">✦</div><span class="section-kicker">MISSION COMPLETE</span><h3>你完成了氣體測試！</h3><p id="finalScore"></p><p class="end-summary">記住：辨認氣體要同時說清楚「測試方法」和「觀察結果」。有些現象並非某種氣體獨有。</p><div class="end-actions"><button type="button" class="primary-button" id="restartButton">再玩一次 <span aria-hidden="true">↻</span></button><button type="button" class="secondary-button" id="endGuideButton">查看學習圖鑑</button><button type="button" class="secondary-button" id="homeButton">返回首頁</button></div></div>
+        <div id="endView" class="end-view view" aria-live="polite"><div class="trophy" aria-hidden="true">✦</div><span class="section-kicker">挑戰完成</span><h3>你完成了氣體測試！</h3><p id="finalScore"></p><p class="end-summary">記住：辨認氣體要同時說清楚「測試方法」和「觀察結果」。有些現象並非某種氣體獨有。</p><div class="end-actions"><button type="button" class="primary-button" id="restartButton">再玩一次 <span aria-hidden="true">↻</span></button><button type="button" class="secondary-button" id="endGuideButton">查看學習圖鑑</button><button type="button" class="secondary-button" id="homeButton">返回首頁</button></div></div>
       </section>
 
       <section class="learning-note"><span class="note-icon" aria-hidden="true">i</span><div><strong>科學小提醒</strong><p>「可觀察的變化」是你真正看到或聽到的事，例如「石灰水變乳白色」；「所以是二氧化碳」才是根據觀察作出的推論。</p></div></section>
@@ -58,6 +59,6 @@
     <footer><span>氣體測試實驗室</span><span>為課堂學習設計 · 模擬實驗</span></footer>
   </div>
 
-  <dialog id="guideDialog" class="guide-dialog" aria-labelledby="guideTitle"><div class="dialog-header"><div><span class="section-kicker">FIELD GUIDE</span><h2 id="guideTitle">氣體測試圖鑑</h2></div><button type="button" class="close-button" id="closeGuideButton" aria-label="關閉圖鑑">×</button></div><p class="guide-intro">方法與現象要成對記憶。以下整理遊戲中的測試，另附兩個容易混淆的氣體。</p><div class="guide-grid"><article><span>01 · O₂</span><h3>氧氣</h3><p>方法：把帶火星的木條放入氣體中。</p><strong>觀察：木條重新燃起。</strong></article><article><span>02 · H₂</span><h3>氫氣</h3><p>方法：把燃着的木條靠近氣體。</p><strong>觀察：發出「卜」聲。</strong></article><article><span>03 · CO₂</span><h3>二氧化碳</h3><p>方法：通入石灰水。</p><strong>觀察：石灰水由清澈變乳白色。</strong></article><article><span>04 · CO₂</span><h3>二氧化碳</h3><p>方法：通入碳酸氫鹽指示劑。</p><strong>觀察：指示劑由紅／橙色變黃色。</strong></article><article><span>05 · H₂O</span><h3>水蒸氣</h3><p>方法：接觸乾燥的藍色氯化鈷試紙。</p><strong>觀察：試紙由藍色變粉紅色。</strong></article><article class="guide-caution"><span>注意 · N₂ / 稀有氣體</span><h3>木條熄滅</h3><p>氮氣和稀有氣體都不支持燃燒；木條熄滅不能單獨區分它們。</p><strong>需要更多證據才能判定。</strong></article></div><p class="guide-source">內容參考：<a href="https://edu.rsc.org/download?ac=17361" target="_blank" rel="noopener noreferrer">Royal Society of Chemistry 氣體測試資料</a>。此遊戲為示意動畫，顏色和時間不代表實際測量值。</p></dialog>
+  <dialog id="guideDialog" class="guide-dialog" aria-labelledby="guideTitle"><div class="dialog-header"><div><span class="section-kicker">學習圖鑑</span><h2 id="guideTitle">氣體測試圖鑑</h2></div><button type="button" class="close-button" id="closeGuideButton" aria-label="關閉圖鑑">×</button></div><p class="guide-intro">方法與現象要成對記憶。以下整理遊戲中的測試，另附兩個容易混淆的氣體。</p><div class="guide-grid"><article><span>01 · O₂</span><h3>氧氣</h3><p>方法：把帶火星的木條放入氣體中。</p><strong>觀察：木條重新燃起。</strong></article><article><span>02 · H₂</span><h3>氫氣</h3><p>方法：把燃着的木條靠近氣體。</p><strong>觀察：發出「卜」聲。</strong></article><article><span>03 · CO₂</span><h3>二氧化碳</h3><p>方法：通入石灰水。</p><strong>觀察：石灰水由清澈變乳白色。</strong></article><article><span>04 · CO₂</span><h3>二氧化碳</h3><p>方法：通入碳酸氫鹽指示劑。</p><strong>觀察：指示劑由紅色變黃色。</strong></article><article><span>05 · H₂O</span><h3>水蒸氣</h3><p>方法：接觸乾燥的藍色氯化鈷試紙。</p><strong>觀察：試紙由藍色變粉紅色。</strong></article><article class="guide-caution"><span>注意 · N₂ / 稀有氣體</span><h3>木條熄滅</h3><p>氮氣和稀有氣體都不支持燃燒；木條熄滅不能單獨區分它們。</p><strong>需要更多證據才能判定。</strong></article></div><p class="guide-source">內容參考：<a href="https://edu.rsc.org/download?ac=17361" target="_blank" rel="noopener noreferrer">Royal Society of Chemistry 氣體測試資料</a>。此遊戲為示意動畫，顏色和時間不代表實際測量值。</p></dialog>
 </body>
 </html>

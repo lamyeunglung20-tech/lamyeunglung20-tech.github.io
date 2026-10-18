@@ -24,13 +24,13 @@ const observationPool = [
   {id:'relight',text:'帶火星的木條重新燃起'},
   {id:'pop',text:'發出清脆的「卜」聲'},
   {id:'milky',text:'石灰水由清澈變乳白色'},
-  {id:'yellow',text:'指示劑由紅／橙色變黃色'},
+  {id:'yellow',text:'指示劑由紅色變黃色'},
   {id:'pink',text:'試紙由藍色變粉紅色'}
 ];
 const rounds = [
   {gas:'氧氣',formula:'O₂',scene:'oxygen',method:'glowing',observation:'relight',methods:['glowing','lit','limewater','cobalt'],observations:['relight','pop','milky','pink'],caption:'帶火星的木條重新燃起。',explanation:'氧氣支持燃燒；帶火星的木條在氧氣中會重新燃起。',fact:'觀察是「木條重新燃起」；由這個現象才推論氣體是氧氣。',hint:'留意「帶火星」與「燃着」木條的分別。'},
   {gas:'氫氣',formula:'H₂',scene:'hydrogen',method:'lit',observation:'pop',methods:['glowing','lit','limewater','indicator'],observations:['relight','pop','yellow','milky'],caption:'靠近火焰時，聽到「卜」的一聲。',explanation:'氫氣遇到火焰會燃燒，常以清脆的「卜」聲作測試。',fact:'聽到聲音也是一種實驗觀察；測試時應由教師監督。',hint:'這一題要留意燃着的木條與聲音。'},
   {gas:'二氧化碳',formula:'CO₂',scene:'lime',method:'limewater',observation:'milky',methods:['glowing','limewater','indicator','cobalt'],observations:['milky','yellow','pink','relight'],caption:'石灰水逐漸由清澈變成乳白色。',explanation:'把二氧化碳通入石灰水，會產生白色沉澱，使石灰水看起來乳白。',fact:'「石灰水變乳白」是這個實驗的直接觀察。',hint:'想想哪種澄清溶液遇到二氧化碳會變乳白。'},
-  {gas:'二氧化碳',formula:'CO₂',scene:'indicator',method:'indicator',observation:'yellow',methods:['lit','limewater','indicator','cobalt'],observations:['pop','milky','yellow','pink'],caption:'碳酸氫鹽指示劑由紅／橙色變黃色。',explanation:'二氧化碳濃度上升時，碳酸氫鹽指示劑會由紅／橙色變黃色。',fact:'同一種氣體可以有多於一種測法；要把方法和相應結果正確配對。',hint:'這次與上一題是同一種氣體，但指定觀察另一種指示劑。'},
+  {gas:'二氧化碳',formula:'CO₂',scene:'indicator',method:'indicator',observation:'yellow',methods:['lit','limewater','indicator','cobalt'],observations:['pop','milky','yellow','pink'],caption:'碳酸氫鹽指示劑由紅色變黃色。',explanation:'二氧化碳濃度上升時，碳酸氫鹽指示劑會由紅色變黃色。',fact:'同一種氣體可以有多於一種測法；要把方法和相應結果正確配對。',hint:'這次與上一題是同一種氣體，但指定觀察另一種指示劑。'},
   {gas:'水蒸氣',formula:'H₂O(g)',scene:'water',method:'cobalt',observation:'pink',methods:['glowing','limewater','indicator','cobalt'],observations:['relight','milky','yellow','pink'],caption:'乾燥的藍色氯化鈷試紙變成粉紅色。',explanation:'乾燥氯化鈷試紙遇水後由藍色變成粉紅色，可用來顯示水的存在。',fact:'關鍵是試紙起初必須乾燥，而且本來是藍色。',hint:'選一種能顯示水的存在的試紙。'}
 ];
