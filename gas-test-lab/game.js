@@ -4,10 +4,12 @@ const state = {
   muted: false, timer: null, lang: 'en'
 };
 let labWorld = null, labCanvas = null, labAudioContext = null;
+const totalMissions = rounds.length + 1;
+const maximumScore = rounds.length * 4 + 1;
 const views = ['introView', 'playView', 'resultView', 'bonusView', 'endView'];
 const sceneLabels = {
   oxygen: '氧氣', hydrogen: '氫氣', lime: '石灰水',
-  indicator: '碳酸氫鹽指示劑', water: '乾燥氯化鈷試紙'
+  indicator: '碳酸氫鹽指示劑', water: '乾燥氯化鈷試紙', starch: '澱粉樣本'
 };
 
 // Record original text nodes once. Dynamic game text is handled by setDynamic().
@@ -30,10 +32,11 @@ function setDynamic(target, zh, en = EN[zh] || zh) {
 }
 function showView(id) { views.forEach(view => $(view).classList.toggle('active', view === id)); if (id === 'playView') requestAnimationFrame(() => labWorld?.resize()); }
 function updateProgress() {
-  const completed = state.phase === 'end' ? 6 : state.phase === 'bonus' ? 5 : state.round;
+  const completed = state.phase === 'end' ? totalMissions : state.phase === 'bonus' ? rounds.length : state.round;
   $('score').textContent = state.score;
-  $('progressCount').textContent = `${completed} / 6`;
-  $('progressFill').style.width = `${completed / 6 * 100}%`;
+  $('scoreMaximum').textContent = `/ ${maximumScore}`;
+  $('progressCount').textContent = `${completed} / ${totalMissions}`;
+  $('progressFill').style.width = `${completed / totalMissions * 100}%`;
   const zh = state.phase === 'intro' ? '準備開始' : state.phase === 'bonus' ? '最後挑戰' : state.phase === 'end' ? '挑戰完成' : `第 ${state.round + 1} 個實驗`;
   const en = state.phase === 'intro' ? 'Ready to begin' : state.phase === 'bonus' ? 'Final challenge' : state.phase === 'end' ? 'Mission complete' : `Experiment ${state.round + 1}`;
   setDynamic('stepLabel', zh, en);
@@ -83,7 +86,7 @@ function renderRound() {
   const round = rounds[state.round];
   showView('playView');
   const number = String(state.round + 1).padStart(2, '0');
-  setDynamic('roundBadge', `實驗 ${number} / 05`, `EXPERIMENT ${number} / 05`);
+  setDynamic('roundBadge', `實驗 ${number} / ${String(rounds.length).padStart(2, '0')}`, `EXPERIMENT ${number} / ${String(rounds.length).padStart(2, '0')}`);
   $('roundNumber').textContent = number;
   setDynamic('gasName', round.gas);
   $('gasFormula').textContent = round.formula;
@@ -190,7 +193,7 @@ function showBonus() {
 function finish() {
   state.phase = 'end';
   showView('endView');
-  setDynamic('finalScore', `你的得分：${state.score} / 21`, `Your score: ${state.score} / 21`);
+  setDynamic('finalScore', `你的得分：${state.score} / ${maximumScore}`, `Your score: ${state.score} / ${maximumScore}`);
   updateProgress();
 }
 function showGuide() { $('guideDialog').showModal(); }
@@ -198,7 +201,7 @@ function applyLanguage(lang) {
   state.lang = lang === 'en' ? 'en' : 'zh-Hant';
   try { localStorage.setItem('gasLabLanguage', state.lang); } catch { /* Offline file may restrict storage. */ }
   document.documentElement.lang = state.lang;
-  document.title = state.lang === 'en' ? 'Gas Test Adventure | Interactive game' : '氣體測試實驗室｜互動配對遊戲';
+  document.title = state.lang === 'en' ? 'Gas & Starch Test Adventure | Interactive game' : '氣體與澱粉測試實驗室｜互動配對遊戲';
   staticNodes.forEach(({node, key, leading, trailing}) => {
     if (node.isConnected) node.nodeValue = `${leading}${tr(key)}${trailing}`;
   });
@@ -206,7 +209,7 @@ function applyLanguage(lang) {
     element.textContent = state.lang === 'en' ? element.dataset.en : element.dataset.zh;
   });
   $('languageSelect').value = state.lang;
-  setDynamic('gameKicker','氣體偵探遊戲','THE GAS DETECTIVE GAME');
+  setDynamic('gameKicker','氣體與澱粉測試','GAS + STARCH TESTS');
   setDynamic('observationTitle',labWorld?.available?'立體實驗室':'觀察視窗',labWorld?.available?'3D EXPERIMENT LAB':'OBSERVATION WINDOW');
   setDynamic('sceneGesture','拖動旋轉 · 雙指縮放','Drag to rotate · Pinch to zoom');
   $('reset3D').setAttribute('aria-label',state.lang==='en'?'Reset view':'重設視角');
@@ -214,7 +217,7 @@ function applyLanguage(lang) {
   labWorld?.setLanguage(state.lang);
   labCanvas?.setAttribute('aria-label',tr(rounds[state.round].caption));
   document.querySelector('.brand').setAttribute('aria-label', state.lang === 'en' ? 'Gas Test Lab home' : '氣體測試實驗室首頁');
-  $('game').setAttribute('aria-label', state.lang === 'en' ? 'Gas test game' : '氣體測試遊戲');
+  $('game').setAttribute('aria-label', state.lang === 'en' ? 'Gas and starch test game' : '氣體與澱粉測試遊戲');
   $('levelMap').setAttribute('aria-label', state.lang === 'en' ? 'Mission progress' : '任務進度');
   document.querySelector('.how-steps').setAttribute('aria-label', state.lang === 'en' ? 'How to play in three steps' : '玩法三步');
   $('closeGuideButton').setAttribute('aria-label', state.lang === 'en' ? 'Close field guide' : '關閉圖鑑');
@@ -222,7 +225,7 @@ function applyLanguage(lang) {
   $('soundButton').setAttribute('aria-pressed', String(!state.muted));
   updateProgress();
   const svg = $('scene').querySelector('svg');
-  if (svg) svg.setAttribute('aria-label', tr(state.phase === 'method' ? '氣體測試模擬實驗' : rounds[state.round].caption));
+  if (svg) svg.setAttribute('aria-label', tr(state.phase === 'method' ? '測試模擬實驗' : rounds[state.round].caption));
 }
 
 $('startButton').addEventListener('click', renderRound);
@@ -286,18 +289,18 @@ function mountScene() {
   if(labWorld?.available){
     const cue=document.createElement('span');cue.id='popCue';cue.className='sound-cue';cue.hidden=true;cue.setAttribute('role','status');setDynamic(cue,'卜！','POP!');
     scene.replaceChildren(labCanvas,cue);scene.classList.add('is-3d');$('sceneControls').hidden=false;
-    labCanvas.setAttribute('aria-label',tr('氣體測試模擬實驗'));labWorld.show(round.scene);labWorld.resize();
+    labCanvas.setAttribute('aria-label',tr('測試模擬實驗'));labWorld.show(round.scene);labWorld.resize();
   } else {
     scene.classList.remove('is-3d');$('sceneControls').hidden=true;scene.innerHTML=scenes[round.scene];
     setDynamic(scene.querySelector('.hint-mark'),sceneLabels[round.scene]);
     if(round.scene==='hydrogen')setDynamic(scene.querySelector('.pop-text'),'卜！','POP!');
-    scene.querySelector('svg').setAttribute('aria-label',tr('氣體測試模擬實驗'));
+    scene.querySelector('svg').setAttribute('aria-label',tr('測試模擬實驗'));
   }
 }
 $('reset3D').addEventListener('click',()=>labWorld?.resetCamera());
 (async()=>{
   try{
-    const {GasTestWorld}=await import('./lab3d.js?v=3d-20261018');
+    const {GasTestWorld}=await import('./lab3d.js?v=starch-20261019');
     labCanvas=document.createElement('canvas');labCanvas.className='lab-canvas';labCanvas.setAttribute('role','img');
     labWorld=new GasTestWorld(labCanvas,{onPop:()=>{playTone('pop');if($('popCue'))$('popCue').hidden=false;}});
     if(!labWorld.available)return;

@@ -76,3 +76,12 @@ main{padding-top:22px}
 @media(max-width:1330px){.game-card{margin:0 3vw}}
 @media(max-width:650px){main{padding-top:15px}.topbar{height:auto;min-height:66px;flex-wrap:wrap;gap:7px;padding-top:7px;padding-bottom:7px}.top-actions{width:100%;justify-content:flex-end;gap:7px}.language-picker{padding:5px 7px;box-shadow:1px 2px 0 #e4b883}.language-picker span{font-size:12px}.language-picker select{font-size:11px;max-width:93px}.game-card{margin:0 10px}.text-button{white-space:nowrap}}
 @media(prefers-reduced-motion:reduce){.scene .back-bubble,.scene.play:before,.scene.play .oxygen-halo,.scene.play .spark-rays,.scene.play .oxygen-spark,.scene.play .shockwave,.scene.play .burst-stars,.scene.play .milk-specks,.scene.play .indicator-wave,.scene.play .color-sparks,.scene.play .paper-glints,.confetti-field i{animation:none}.scene.play:before{opacity:.6;transform:scale(1)}.scene.play .oxygen-halo{opacity:.65;transform:scale(2.2)}.scene.play .spark-rays,.scene.play .oxygen-spark,.scene.play .milk-specks,.scene.play .color-sparks,.scene.play .paper-glints{opacity:.8}.scene.play .indicator-wave{opacity:.48;transform:none}}
+
+/* Iodine test: brown reagent reaches the sample before the blue-black result. */
+.scene .starch-sample{fill:#f5eee1}
+.scene .iodine-drop{opacity:0}
+.scene.play .iodine-drop{animation:iodine-drop .65s ease-in .45s 3 both}
+.scene.play .starch-sample{animation:starch-colour 2.8s linear forwards}
+@keyframes iodine-drop{0%{opacity:0;transform:translateY(0)}15%,80%{opacity:1}100%{opacity:0;transform:translateY(62px)}}
+@keyframes starch-colour{0%,30%{fill:#f5eee1}39%{fill:#a46a2a}85%,100%{fill:#141c46}}
+@media(prefers-reduced-motion:reduce){.scene.play .iodine-drop{animation:none}.scene.play .starch-sample{animation:none;fill:#141c46}}

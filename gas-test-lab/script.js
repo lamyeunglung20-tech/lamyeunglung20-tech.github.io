@@ -18,19 +18,26 @@ const methodPool = [
   {id:'lit',text:'把燃着的木條靠近氣體'},
   {id:'limewater',text:'把氣體通入石灰水'},
   {id:'indicator',text:'把氣體通入碳酸氫鹽指示劑'},
-  {id:'cobalt',text:'讓氣體接觸乾燥的藍色氯化鈷試紙'}
+  {id:'cobalt',text:'讓氣體接觸乾燥的藍色氯化鈷試紙'},
+  {id:'iodine',text:'在樣本中加入幾滴碘溶液'}
 ];
 const observationPool = [
   {id:'relight',text:'帶火星的木條重新燃起'},
   {id:'pop',text:'發出清脆的「卜」聲'},
   {id:'milky',text:'石灰水由清澈變乳白色'},
   {id:'yellow',text:'指示劑由紅色變黃色'},
-  {id:'pink',text:'試紙由藍色變粉紅色'}
+  {id:'pink',text:'試紙由藍色變粉紅色'},
+  {id:'blueblack',text:'碘溶液由棕色變成藍黑色'},
+  {id:'brown',text:'碘溶液保持棕色'}
 ];
 const rounds = [
   {gas:'氧氣',formula:'O₂',scene:'oxygen',method:'glowing',observation:'relight',methods:['glowing','lit','limewater','cobalt'],observations:['relight','pop','milky','pink'],caption:'帶火星的木條重新燃起。',explanation:'氧氣支持燃燒；帶火星的木條在氧氣中會重新燃起。',fact:'觀察是「木條重新燃起」；由這個現象才推論氣體是氧氣。',hint:'留意「帶火星」與「燃着」木條的分別。'},
   {gas:'氫氣',formula:'H₂',scene:'hydrogen',method:'lit',observation:'pop',methods:['glowing','lit','limewater','indicator'],observations:['relight','pop','yellow','milky'],caption:'靠近火焰時，聽到「卜」的一聲。',explanation:'氫氣遇到火焰會燃燒，常以清脆的「卜」聲作測試。',fact:'聽到聲音也是一種實驗觀察；測試時應由教師監督。',hint:'這一題要留意燃着的木條與聲音。'},
   {gas:'二氧化碳',formula:'CO₂',scene:'lime',method:'limewater',observation:'milky',methods:['glowing','limewater','indicator','cobalt'],observations:['milky','yellow','pink','relight'],caption:'石灰水逐漸由清澈變成乳白色。',explanation:'把二氧化碳通入石灰水，會產生白色沉澱，使石灰水看起來乳白。',fact:'「石灰水變乳白」是這個實驗的直接觀察。',hint:'想想哪種澄清溶液遇到二氧化碳會變乳白。'},
   {gas:'二氧化碳',formula:'CO₂',scene:'indicator',method:'indicator',observation:'yellow',methods:['lit','limewater','indicator','cobalt'],observations:['pop','milky','yellow','pink'],caption:'碳酸氫鹽指示劑由紅色變黃色。',explanation:'二氧化碳濃度上升時，碳酸氫鹽指示劑會由紅色變黃色。',fact:'同一種氣體可以有多於一種測法；要把方法和相應結果正確配對。',hint:'這次與上一題是同一種氣體，但指定觀察另一種指示劑。'},
-  {gas:'水蒸氣',formula:'H₂O(g)',scene:'water',method:'cobalt',observation:'pink',methods:['glowing','limewater','indicator','cobalt'],observations:['relight','milky','yellow','pink'],caption:'乾燥的藍色氯化鈷試紙變成粉紅色。',explanation:'乾燥氯化鈷試紙遇水後由藍色變成粉紅色，可用來顯示水的存在。',fact:'關鍵是試紙起初必須乾燥，而且本來是藍色。',hint:'選一種能顯示水的存在的試紙。'}
+  {gas:'水蒸氣',formula:'H₂O(g)',scene:'water',method:'cobalt',observation:'pink',methods:['glowing','limewater','indicator','cobalt'],observations:['relight','milky','yellow','pink'],caption:'乾燥的藍色氯化鈷試紙變成粉紅色。',explanation:'乾燥氯化鈷試紙遇水後由藍色變成粉紅色，可用來顯示水的存在。',fact:'關鍵是試紙起初必須乾燥，而且本來是藍色。',hint:'選一種能顯示水的存在的試紙。'},
+  {gas:'澱粉',formula:'(C₆H₁₀O₅)ₙ',scene:'starch',method:'iodine',observation:'blueblack',methods:['limewater','cobalt','iodine','glowing'],observations:['brown','blueblack','pink','milky'],caption:'加入碘溶液後，含澱粉的樣本變成藍黑色。',explanation:'碘溶液可用來測試澱粉：遇到澱粉時，會由棕色變成藍黑色。',fact:'若沒有澱粉，碘溶液會保持棕色。此測試不需要加熱。',hint:'選一種遇到澱粉會變成藍黑色的溶液。'}
 ];
+
+// Illustrated fallback uses the same reagent and colour change as the 3D stage.
+scenes.starch = svgFrame(`<path class="glass" d="M120 118 V208 Q120 220 132 220 H288 Q300 220 300 208 V118"/><path class="starch-sample" d="M124 164 Q210 158 296 164 V208 Q296 216 288 216 H132 Q124 216 124 208Z"/><path class="glass-rim" d="M120 118 H300"/><g class="iodine-dropper"><rect x="198" y="22" width="24" height="34" rx="10" fill="#586673"/><path d="M202 56 H218 V89 L212 103 H208 L202 89Z" fill="#c5e9eaaa" stroke="#527d89" stroke-width="2"/><path d="M206 62 H214 V88 L210 98 L206 88Z" fill="#99521b"/></g><path class="iodine-drop" d="M210 102 C207 109 203 112 205 116 Q210 123 215 116 C217 112 213 109 210 102Z" fill="#99521b"/><path class="glass-highlight" d="M134 130 V204"/><text class="hint-mark" x="210" y="244" text-anchor="middle">澱粉樣本</text>`);

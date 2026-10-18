@@ -37,7 +37,35 @@ export class GasTestWorld {
   bubbles(p){for(let i=0;i<13;i++){const b=this.sphere(p,0,0,0,.035+(i%3)*.012,0xe4f9f6,{transparent:true,opacity:.65,roughness:.1,depthWrite:false});b.castShadow=false;this.animations.push((t,s)=>{b.visible=this.active&&s<2.7&&!this.reduced;const k=(t*.55+i/13)%1;b.position.set(.11+Math.sin(i*2.4)*.15,.32+k*.91,.05+Math.cos(i)*.16);b.scale.setScalar(.65+k*.8);});}}
   solutionScene(id){const p=this.vessel(.85,1.85);const indicator=id==='indicator';const liquid=this.liquid(p,.8,1.15,indicator?0xe3434c:0xd7eeec,indicator?.87:.17);const start=new THREE.Color(indicator?0xe3434c:0xd7eeec),end=new THREE.Color(indicator?0xffdd43:0xffffff);this.tube(this.root,[[-1.8,2.3,0],[-.55,2.3,0],[.12,2.27,0],[.13,1.65,0],[.13,.34,0]],.055,0xaccfd3,{transparent:true,opacity:.65,roughness:.13,depthWrite:false});this.tube(this.root,[[-2.12,2.3,0],[-1.8,2.3,0]],.085,0xe2ba84);this.bubbles(p);this.animations.push((t,s)=>{const k=this.active?ease((s-.4)/1.8):0;liquid.material.color.copy(start).lerp(end,k);liquid.userData.surface.material.color.copy(liquid.material.color);liquid.material.opacity=indicator?.87:.17+k*.79;});}
   waterScene(){const p=this.vessel(.9,1.45);this.liquid(p,.85,.87,0x9adbdc,.35);const paper=this.box(this.root,0,2.05,.04,.47,.78,.025,0x478bdd,{roughness:.75});this.cylinder(this.root,1.56,.11,-.16,.45,.18,0x789ea4,{metalness:.3});this.bar(this.root,[1.56,.16,-.16],[1.56,2.9,-.16],.045,0x9eb7b8,{metalness:.55,roughness:.25});this.bar(this.root,[1.56,2.74,-.16],[.04,2.74,-.16],.045,0x9eb7b8,{metalness:.55,roughness:.25});this.box(this.root,1.56,2.73,-.16,.2,.2,.2,0x587b82);this.bar(this.root,[.04,2.74,-.16],[-.11,2.4,.04],.025,0x839d9e,{metalness:.6});this.bar(this.root,[.04,2.74,-.16],[.11,2.4,.04],.025,0x839d9e,{metalness:.6});for(let i=0;i<13;i++){const v=this.sprite(this.root,this.fogTexture,0,1.5,0,.5);this.animations.push((t,s)=>{const k=this.reduced?(i+.5)/13:(t*.18+i/13)%1;v.position.set(Math.sin(i*2.399)*(.15+k*.3),1.28+k*1.3,Math.cos(i*2.399)*.22);v.scale.setScalar(.2+k*.5);v.material.opacity=this.active?Math.sin(k*Math.PI)*.21:0;});}const blue=new THREE.Color(0x478bdd),pink=new THREE.Color(0xef93bb);this.animations.push((t,s)=>paper.material.color.copy(blue).lerp(pink,this.active?ease((s-.3)/1.8):0));}
-  show(id){if(!this.available)return;this.clear();this.id=['oxygen','hydrogen','lime','indicator','water'].includes(id)?id:'oxygen';this.stage();if(this.id==='oxygen'||this.id==='hydrogen')this.splintScene(this.id);else if(this.id==='water')this.waterScene();else this.solutionScene(this.id);this.resetCamera();this.update();this.resize();}
+  starchScene(){
+    const p=this.vessel(.88,1.55);
+    const sample=this.liquid(p,.83,.8,0xf5eee1,.96);
+    const white=new THREE.Color(0xf5eee1),brown=new THREE.Color(0x99521b),blueBlack=new THREE.Color(0x10183f);
+    // A glass pipette containing brown iodine solution above the starch sample.
+    const dropper=new THREE.Group();this.root.add(dropper);
+    this.cylinder(dropper,0,.34,0,.095,.56,0xbce5e9,{transparent:true,opacity:.5,depthWrite:false,roughness:.16});
+    this.cylinder(dropper,0,.34,0,.049,.47,0x99521b,{roughness:.3});
+    this.mesh(new THREE.ConeGeometry(.095,.18,24),this.mat(0xbce5e9,{transparent:true,opacity:.55,depthWrite:false}),dropper,0,-.03,0).rotation.z=Math.PI;
+    this.cylinder(dropper,0,.72,0,.15,.26,0x52616c);
+    this.sphere(dropper,0,.85,0,.15,0x52616c);
+    dropper.position.set(-1.1,2.05,0);
+    const drops=[];
+    for(let i=0;i<3;i++){const drop=this.sphere(this.root,0,0,0,.07,0x99521b,{roughness:.25});drop.scale.y=1.35;drop.visible=false;drops.push(drop);}
+    this.animations.push((t,s)=>{
+      const active=this.active,k=active?ease(s/.45):0;
+      dropper.position.set(-1.1*(1-k),2.05,0);
+      for(let i=0;i<drops.length;i++){
+        const q=(s-.48-i*.52)/.43;
+        drops[i].visible=active&&!this.reduced&&q>=0&&q<1;
+        drops[i].position.set(0,1.93-Math.max(0,q)*.98,0);
+      }
+      const added=active?ease((s-.86)/.22):0;
+      const reacted=active?ease((s-1.08)/1.35):0;
+      sample.material.color.copy(white).lerp(brown,added).lerp(blueBlack,reacted);
+      sample.userData.surface.material.color.copy(sample.material.color);
+    });
+  }
+  show(id){if(!this.available)return;this.clear();this.id=['oxygen','hydrogen','lime','indicator','water','starch'].includes(id)?id:'oxygen';this.stage();if(this.id==='oxygen'||this.id==='hydrogen')this.splintScene(this.id);else if(this.id==='water')this.waterScene();else if(this.id==='starch')this.starchScene();else this.solutionScene(this.id);this.resetCamera();this.update();this.resize();}
   play(){if(!this.available)return;this.active=true;this.popped=false;this.activationTime=this.elapsed;this.update();}
   setLanguage(lang){this.lang=lang;}
   resetCamera(){if(!this.available)return;this.yaw=.23;this.pitch=1.24;this.radius=8.5;this.cameraUpdate();}
