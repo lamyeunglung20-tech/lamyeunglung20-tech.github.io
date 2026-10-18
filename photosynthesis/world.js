@@ -4,8 +4,8 @@ import * as THREE from './vendor/three.module.js';
 export class PlantWorld {
   constructor(canvas,{onPhase=()=>{}}={}) {
     this.canvas=canvas; this.onPhase=onPhase; this.available=false;
-    this.state={water:false,carbon:false,light:false,chlorophyll:false,products:false};
-    this.running=null; this.startTime=0; this.pointerMap=new Map(); this.disposed=false;
+    this.state={water:false,carbon:false,light:false,chlorophyll:false,products:false,glucose:false,oxygen:false};
+    this.running=null; this.paused=false; this.elapsed=0; this.previousFrame=null; this.startTime=0; this.pointerMap=new Map(); this.disposed=false;
     this.reduced=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     try {
       this.renderer=new THREE.WebGLRenderer({canvas,antialias:true,alpha:true,powerPreference:'low-power'});
@@ -16,10 +16,10 @@ export class PlantWorld {
       this.scene=new THREE.Scene(); this.scene.fog=new THREE.Fog(0xf6f4e9,18,32);
       this.camera=new THREE.PerspectiveCamera(37,1,.1,60);
       this.target=new THREE.Vector3(0,.85,0); this.azimuth=.34; this.elevation=.21; this.distance=13;
-      this.scene.add(new THREE.HemisphereLight(0xfffbea,0x82977b,2.2));
-      const key=new THREE.DirectionalLight(0xfff4d7,3); key.position.set(-4,9,8); key.castShadow=true;
+      this.scene.add(new THREE.HemisphereLight(0xffffff,0x929292,2.2));
+      const key=new THREE.DirectionalLight(0xffffff,3); key.position.set(-4,9,8); key.castShadow=true;
       key.shadow.mapSize.set(1024,1024); Object.assign(key.shadow.camera,{left:-7,right:7,top:7,bottom:-5,near:1,far:25}); key.shadow.bias=-.0007; this.scene.add(key);
-      const fill=new THREE.DirectionalLight(0xdaf2f5,1.3); fill.position.set(6,3,-4); this.scene.add(fill);
+      const fill=new THREE.DirectionalLight(0xffffff,1.3); fill.position.set(6,3,-4); this.scene.add(fill);
       this.materials={}; this.build(); this.bind(); this.resize(); this.available=true;
       this.loop=this.loop.bind(this); this.raf=requestAnimationFrame(this.loop);
     } catch(error) { this.renderer?.dispose(); this.available=false; }
@@ -104,6 +104,11 @@ export class PlantWorld {
       for(let i=0;i<9;i++){let m=this.sphere([0,0,0],kind==='light'?.045:.06,material,group);m.castShadow=false;}
       this.flows[kind]=group;
     }
+    // Each discovery lights its own materials; grey is a game state, not plant biology.
+    for(const [key,list] of Object.entries({water:[soil,soilFront,root,stem,grainMat,topMat,waterMat],carbon:[cloudMat,carbonMat],light:[this.sunMat,halo.material,rayMat],chlorophyll:[green,vein]}))list.forEach(m=>m.userData.unlock=key);
+    for(const [key,group] of [['glucose',this.glucose],['oxygen',this.oxygenMarks],...this.pigments.map(g=>['chlorophyll',g]),...Object.entries(this.flows)])group.traverse(o=>{if(o.material)o.material.userData.unlock=key;});
+    const materials=new Set();this.scene.traverse(o=>{if(o.material)(Array.isArray(o.material)?o.material:[o.material]).forEach(m=>materials.add(m));});
+    this.palette=[...materials].map(m=>({m,key:m.userData.unlock,color:m.color.clone(),emissive:m.emissive.clone(),intensity:m.emissiveIntensity}));
     this.setState(this.state);
   }
   makeLeaf(pos,angle,scale,green,vein) {
@@ -129,32 +134,37 @@ export class PlantWorld {
     if(!this.scene)return;
     this.waterMarks.visible=this.state.water;this.carbonMarks.visible=this.state.carbon;
     this.rays.visible=this.state.light;this.pigments.forEach(g=>g.visible=this.state.chlorophyll);
-    this.glucose.visible=this.state.products;this.oxygenMarks.visible=this.state.products;
-    if(!this.running)Object.values(this.flows).forEach(g=>g.visible=false);
+    this.glucose.visible=this.state.glucose;this.oxygenMarks.visible=this.state.oxygen;
+    this.palette?.forEach(({m,key,color,emissive,intensity})=>{
+      const lit=key?this.state[key]:Object.values(this.state).some(Boolean);
+      if(lit){m.color.copy(color);m.emissive.copy(emissive);m.emissiveIntensity=intensity;}
+      else{const grey=.22+(color.r*.21+color.g*.72+color.b*.07)*.46;m.color.setRGB(grey,grey,grey);m.emissive.setHex(0);m.emissiveIntensity=0;}
+    });
+    this.updateFlows();
   }
+  setPaused(value){this.paused=value;}
+  updateFlows(){for(const [name,group]of Object.entries(this.flows))group.visible=Boolean(this.state[name]);}
   play(kind) {
-    if(!this.available)return;
-    if(!['water','carbon','light','chlorophyll','products'].includes(kind))return;
-    this.running=kind;this.startTime=performance.now();this.onPhase(kind);
-    // State is owned by the caller; the animation itself does not unlock a resource.
-    if(this.reduced){this.finish();return;}
+    if(!this.available||!['water','carbon','light','chlorophyll','products'].includes(kind))return;
+    this.running=kind;this.startTime=this.elapsed;this.onPhase(kind);
+    if(this.reduced)this.finish();
   }
-  finish(){this.running=null;Object.values(this.flows).forEach(g=>g.visible=false);this.setState(this.state);this.onPhase('idle');}
+  finish(){this.running=null;this.updateFlows();this.onPhase('idle');}
   loop(now) {
     if(this.disposed)return;
-    const t=now*.001;
-    if(this.running){
-      const age=(now-this.startTime)/1000,kind=this.running;
-      for(const [name,group] of Object.entries(this.flows)){
-        const show=(kind===name)||(kind==='chlorophyll'&&name==='light')||(kind==='products'&&this.state.water&&this.state.carbon&&this.state.light&&this.state.chlorophyll);
-        group.visible=show;
-        if(show)group.children.forEach((m,i)=>{const p=(age*.42+i/group.children.length)%1;m.position.copy(this.paths[name].getPoint(p));m.scale.setScalar(.7+Math.sin(p*Math.PI)*.5);});
-      }
-      if(kind==='chlorophyll'||kind==='light'||kind==='products')this.pigments.forEach(g=>g.children.forEach(m=>{m.material.emissiveIntensity=.16+Math.max(0,Math.sin(age*5))*.65;}));
-      if(kind==='products'){this.glucose.visible=true;this.oxygenMarks.visible=true;this.glucose.position.y=Math.sin(age*3)*.035;}
-      if(age>(kind==='products'?4:3))this.finish();
+    const dt=this.previousFrame===null?0:Math.min(.05,(now-this.previousFrame)/1000);this.previousFrame=now;
+    if(!this.reduced&&!this.paused)this.elapsed+=dt;
+    const t=this.elapsed;
+    // Every unlocked flow keeps moving together, independently of the active question.
+    for(const [name,group] of Object.entries(this.flows)){
+      group.visible=Boolean(this.state[name]);
+      if(group.visible)group.children.forEach((m,i)=>{const p=(t*.24+i/group.children.length)%1;m.position.copy(this.paths[name].getPoint(p));m.scale.setScalar(.7+Math.sin(p*Math.PI)*.5);});
     }
-    if(!this.reduced){this.sun.rotation.z=Math.sin(t*.5)*.025;this.cloud.position.y=2.96+Math.sin(t*.7)*.025;}
+    this.pigments.forEach(g=>g.children.forEach(m=>{m.material.emissiveIntensity=this.state.chlorophyll?.18+Math.max(0,Math.sin(t*3))*.5:0;}));
+    this.glucose.position.y=this.state.glucose?Math.sin(t*2)*.055:0;
+    if(this.state.light)this.sun.rotation.z=Math.sin(t*.5)*.025;
+    if(this.state.carbon)this.cloud.position.y=2.96+Math.sin(t*.7)*.025;
+    if(this.running&&t-this.startTime>3)this.finish();
     this.renderer.render(this.scene,this.camera);this.raf=requestAnimationFrame(this.loop);
   }
   cameraUpdate(){
